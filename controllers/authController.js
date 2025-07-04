@@ -72,7 +72,7 @@ export const signInUser = async (req, res) => {
 
     delete user.password;
 
-    return res.status(200).json({
+    res.status(200).json({
       status: 'success',
       message: 'Loggin Successfull !',
       user,

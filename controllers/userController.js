@@ -67,11 +67,17 @@ export const updateUserPassword = async (req, res) => {
     res.status(500).json({ status: 'failed', message: error?.message });
   }
 };
+
 export const updateUserinfo = async (req, res) => {
   try {
     const { userId, firstName, lastName, country, currency, contact } =
       req.body;
-
+    if (!firstName) {
+      return res.status(400).json({
+        status: 'failed',
+        message: 'Provide required fields!',
+      });
+    }
     const result = await pool.query({
       text: 'SELECT * FROM tbluser WHERE id = $1',
       values: [userId],
@@ -85,7 +91,7 @@ export const updateUserinfo = async (req, res) => {
         .json({ status: 'failed', message: 'No user found !' });
     }
 
-    const updatedUser = await pool.query({
+    await pool.query({
       text: `UPDATE tbluser SET firstname = $1, lastname = $2, country = $3, currency = $4, contact = $5, updatedat = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *`,
       values: [firstName, lastName, country, currency, contact, userId],
     });
@@ -95,7 +101,9 @@ export const updateUserinfo = async (req, res) => {
       message: 'User Details updated successfully',
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ status: 'failed', message: error?.message });
+    console.log({ error });
+    res
+      .status(500)
+      .json({ status: 'failed', error: error, message: error?.message });
   }
 };
