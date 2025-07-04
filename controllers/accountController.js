@@ -55,7 +55,7 @@ export const createAccount = async (req, res) => {
 
     const description = account.account_name + ' (Initial Deposit)';
 
-    const initialDepositResult = await pool.query({
+    await pool.query({
       text: 'INSERT INTO tbltransaction(user_id, description, type, status, amount, source) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       values: [
         userId,
@@ -77,5 +77,53 @@ export const createAccount = async (req, res) => {
     res
       .status(500)
       .json({ status: 'failed', error: error, message: error?.message });
+  }
+};
+
+export const addFunds = async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+
+    const { id: accountId } = req.params;
+
+    const newAmount = Number(amount);
+
+    const accountInfoQuery = await pool.query({
+      text: 'UPDATE tblaccount SET account_balance = (account_balance + $1), updatedat = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+      values: [newAmount, accountId],
+    });
+
+    const accountInfo = accountInfoQuery.rows[0];
+
+    if (!accountInfo) {
+      return res.status(404).json({
+        status: 'failed',
+        message: 'No Account found !',
+      });
+    }
+
+    const description = accountInfo.account_name + ' (Deposit)';
+
+    await pool.query({
+      text: 'INSERT INTO tbltransaction(user_id, description, type, status, amount, source) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      values: [
+        userId,
+        description,
+        'income',
+        'Completed',
+        amount,
+        accountInfo.account_name,
+      ],
+    });
+    res.status(201).json({
+      status: 'success',
+      message: 'Transaction completed successfully',
+      data: accountInfo,
+    });
+  } catch (error) {
+    res.status(201).json({
+      status: 'failed',
+      message: 'Transaction failed: ' + error?.message,
+    });
   }
 };
