@@ -10,5 +10,6 @@ const router = express.Router();
 
 router.get('/', authMiddleWare, getUser);
 router.put('/update-password', authMiddleWare, updateUserPassword);
+router.put('/update-user-info', authMiddleWare, updateUserinfo);
 
 export default router;
