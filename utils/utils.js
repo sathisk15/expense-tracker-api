@@ -16,8 +16,8 @@ export const comparePassword = async (userPassword, password) => {
   }
 };
 
-export const createJWT = (id) => {
-  JWT.sign(
+export const createJWT = async (id) => {
+  return JWT.sign(
     {
       userId: id,
     },
