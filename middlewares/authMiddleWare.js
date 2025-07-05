@@ -13,7 +13,10 @@ export const authMiddleWare = async (req, res, next) => {
 
   try {
     const userToken = JWT.verify(token, process.env.JWT_SECRET);
-    req.body.userId = userToken.userId;
+    req.body = {
+      ...req.body,
+      userId: userToken.userId,
+    };
     next();
   } catch (error) {
     console.log(error);
