@@ -1,4 +1,5 @@
 import { pool } from '../configs/db.js';
+import { getMonthName } from '../utils/utils.js';
 
 export const getTransactions = async (req, res) => {
   try {
@@ -190,6 +191,78 @@ export const transerMoneyToAccount = async (req, res) => {
     res.status(201).json({
       status: 'success',
       message: 'Transfer completed successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'failed',
+      message: error?.message,
+    });
+  }
+};
+
+export const getDashboardInformation = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    const transactionsResult = await pool.query({
+      text: 'SELECT type, sum(amount) AS totalAmount FROM tbltransaction WHERE user_id = $1 GROUP BY type',
+      values: [userId],
+    });
+
+    const transactions = transactionsResult.rows;
+
+    transactions.forEach(({ type, totalamount }) => {
+      if (type === 'income') totalIncome += +totalamount;
+      else totalExpense += +totalamount;
+    });
+
+    const availableBalance = totalIncome - totalExpense;
+
+    const year = new Date().getFullYear();
+    const startDate = new Date(year, 0, 1).toISOString();
+    const endDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
+
+    const result = await pool.query({
+      text: 'SELECT EXTRACT(MONTH FROM createdat) AS month, type, SUM(amount) AS totalAmount FROM tbltransaction WHERE user_id = $1 AND createdat BETWEEN $2 AND $3 GROUP BY EXTRACT(MONTH FROM createdat), type',
+      values: [userId, startDate, endDate],
+    });
+
+    const data = new Array(12).fill().map((_, index) => {
+      const monthData = result.rows.filter(({ month }) => +month === index + 1);
+
+      const income =
+        monthData.find((item) => item.type === 'income')?.totalamount || 0;
+      const expense =
+        monthData.find((item) => item.type === 'expense')?.totalamount || 0;
+
+      return { label: getMonthName(index), income: +income, expense: +expense };
+    });
+
+    const lastTransactionsResult = await pool.query({
+      text: 'SELECT * FROM tbltransaction WHERE user_id = $1 ORDER BY id DESC LIMIT 5',
+      values: [userId],
+    });
+
+    const lastTransaction = lastTransactionsResult.rows;
+
+    const lastAccountResult = await pool.query({
+      text: 'SELECT * FROM tblaccount WHERE user_id = $1 ORDER BY id DESC LIMIT 5',
+      values: [userId],
+    });
+
+    const lastAccount = lastAccountResult.rows;
+
+    res.status(200).json({
+      status: 'success',
+      availableBalance,
+      totalIncome,
+      totalExpense,
+      chartData: data,
+      lastTransaction,
+      lastAccount,
     });
   } catch (error) {
     res.status(500).json({
