@@ -8,7 +8,7 @@ export const signUpUser = async (req, res) => {
     if (!(firstName && email && password)) {
       return res.status(400).json({
         status: 'failed',
-        message: 'Provide required fields!',
+        message: 'Please provide required fields !',
       });
     }
 
@@ -18,9 +18,9 @@ export const signUpUser = async (req, res) => {
     });
 
     if (userExist.rows[0].exists) {
-      return res.status(404).json({
+      return res.status(409).json({
         status: 'failed',
-        message: 'Email is already exists. Try Login',
+        message: 'Email is already exists. Try Login !',
       });
     }
 
@@ -35,8 +35,8 @@ export const signUpUser = async (req, res) => {
 
     res.status(201).json({
       status: 'success',
-      message: 'User Account created successfully',
-      user: user.rows[0],
+      message: 'Account created successfully.',
+      data: { user: user.rows[0] },
     });
   } catch (error) {
     console.log(error);
@@ -74,7 +74,7 @@ export const signInUser = async (req, res) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Loggin Successfull !',
+      message: 'Login Successfull !',
       user,
       token,
     });
