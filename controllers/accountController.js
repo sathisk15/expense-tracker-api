@@ -10,7 +10,7 @@ export const getAccounts = async (req, res) => {
     res.status(200).json({
       status: 'success',
       message: 'User Accounts',
-      data: accounts.rows,
+      accounts: accounts.rows,
     });
   } catch (error) {
     console.log(error);
