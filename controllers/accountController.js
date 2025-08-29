@@ -10,7 +10,7 @@ export const getAccounts = async (req, res) => {
     res.status(200).json({
       status: 'success',
       message: 'User Accounts',
-      accounts: accounts.rows,
+      accounts: accounts.rows.sort((a, b) => a.id - b.id),
     });
   } catch (error) {
     console.log(error);
