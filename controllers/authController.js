@@ -84,6 +84,49 @@ export const signInUser = async (req, res) => {
   }
 };
 
+export const signUpGoogleUser = async (req, res) => {
+  try {
+    const { firstName, email } = req.body;
+
+    if (!(firstName && email)) {
+      return res.status(400).json({
+        status: 'failed',
+        message: 'Please provide required fields !',
+      });
+    }
+
+    const userExist = await pool.query({
+      text: 'SELECT EXISTS (SELECT * FROM tbluser WHERE email = $1)',
+      values: [email],
+    });
+
+    if (userExist.rows[0].exists) {
+      return res.status(409).json({
+        status: 'failed',
+        message: 'Email is already exists. Try Login !',
+      });
+    }
+
+    // const hashedPassword = await hashPassword(password);
+
+    const user = await pool.query({
+      text: `INSERT INTO tbluser (firstname, email) VALUES ($1, $2) RETURNING *`,
+      values: [firstName, email],
+    });
+
+    delete user.rows[0].password;
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Account created successfully.',
+      data: { user: user.rows[0] },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ status: 'failed', message: error?.message });
+  }
+};
+
 // const signInUser = async (req, res) => {
 //   try {
 //   } catch (error) {
