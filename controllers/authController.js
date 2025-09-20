@@ -127,6 +127,40 @@ export const signUpGoogleUser = async (req, res) => {
   }
 };
 
+export const signInGoogleUser = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const result = await pool.query({
+      text: 'SELECT * FROM tbluser WHERE email = $1',
+      values: [email],
+    });
+
+    const user = result?.rows[0];
+
+    if (!user?.email) {
+      return res.status(404).json({
+        status: 'failed',
+        message: 'No user found. Please Sign up !',
+      });
+    }
+
+    const token = await createJWT(user?.id);
+
+    delete user.password;
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Login Successfull !',
+      user,
+      token,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ status: 'failed', message: error?.message });
+  }
+};
+
 // const signInUser = async (req, res) => {
 //   try {
 //   } catch (error) {
